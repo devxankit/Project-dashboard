@@ -9,7 +9,21 @@ const populate = (query) =>
 
 exports.getProjects = async (req, res) => {
   try {
-    const projects = await populate(Project.find().sort({ createdAt: -1 }));
+    const projects = await populate(Project.find().sort({ sequence: 1, createdAt: -1 }));
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getPublicProjects = async (req, res) => {
+  try {
+    // Only fetch fields that are safe for public viewing
+    const projects = await Project.find()
+      .sort({ sequence: 1, createdAt: -1 })
+      .populate('status', 'name color')
+      .populate('assignedPeople', 'name role') // No emails for public
+      .select('-createdBy'); // Hide creator details but show remarks for detail view
     res.json(projects);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -18,7 +32,7 @@ exports.getProjects = async (req, res) => {
 
 exports.createProject = async (req, res) => {
   try {
-    const { name, startDate, deadline, status, assignedPeople, remarks, progress } = req.body;
+    const { name, startDate, deadline, status, assignedPeople, remarks, progress, priority, sequence } = req.body;
     if (!name || !startDate || !deadline || !status)
       return res.status(400).json({ message: 'name, startDate, deadline and status are required' });
 
@@ -27,6 +41,8 @@ exports.createProject = async (req, res) => {
       assignedPeople: assignedPeople || [],
       remarks: remarks || '',
       progress: progress || 0,
+      priority: priority || 'normal',
+      sequence: sequence || 0,
       createdBy: req.user._id,
     });
 
@@ -50,7 +66,7 @@ exports.updateProject = async (req, res) => {
     const old = await Project.findById(req.params.id);
     if (!old) return res.status(404).json({ message: 'Project not found' });
 
-    const tracked = ['name', 'startDate', 'deadline', 'status', 'progress', 'remarks'];
+    const tracked = ['name', 'startDate', 'deadline', 'status', 'progress', 'remarks', 'priority', 'sequence'];
     const changes = {};
     tracked.forEach((key) => {
       if (req.body[key] !== undefined &&

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 
 const EMPTY = {
   name: '', startDate: '', deadline: '',
   status: '', assignedPeople: [], remarks: '', progress: 0,
+  priority: 'normal', sequence: 0
 };
 
 export default function ProjectModal({ isOpen, onClose, project }) {
@@ -14,6 +15,10 @@ export default function ProjectModal({ isOpen, onClose, project }) {
   const [newStatus, setNewStatus] = useState({ name: '', color: '#6366f1' });
   const [showStatusForm, setShowStatusForm] = useState(false);
   const [addingStatus, setAddingStatus] = useState(false);
+
+  const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
+  const dropdownRef = useRef(null);
 
   const isEdit = Boolean(project);
 
@@ -30,12 +35,27 @@ export default function ProjectModal({ isOpen, onClose, project }) {
         assignedPeople: project.assignedPeople?.map((p) => p._id) || [],
         remarks: project.remarks || '',
         progress: project.progress ?? 0,
+        priority: project.priority || 'normal',
+        sequence: project.sequence ?? 0,
       });
     } else {
       setForm(EMPTY);
     }
     setShowStatusForm(false);
+    setIsTeamDropdownOpen(false);
+    setMemberSearch('');
   }, [project, isOpen]);
+
+  // Click outside handler
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsTeamDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -91,6 +111,13 @@ export default function ProjectModal({ isOpen, onClose, project }) {
     }
   };
 
+  const filteredTeam = team.filter(m => 
+    m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+    m.role?.toLowerCase().includes(memberSearch.toLowerCase())
+  );
+
+  const selectedCount = form.assignedPeople.length;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -100,7 +127,7 @@ export default function ProjectModal({ isOpen, onClose, project }) {
       />
 
       {/* Modal */}
-      <div className="relative bg-gray-900 border border-gray-700/80 rounded-2xl w-full max-w-lg shadow-2xl max-h-[92vh] flex flex-col">
+      <div className="relative bg-gray-900 border border-gray-700/80 rounded-2xl w-full max-w-lg shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
           <h3 className="text-base font-semibold text-white">
@@ -151,6 +178,36 @@ export default function ProjectModal({ isOpen, onClose, project }) {
                 type="date"
                 value={form.deadline}
                 onChange={(e) => set('deadline', e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+          
+          {/* Priority & Sequence */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                Priority
+              </label>
+              <select
+                value={form.priority}
+                onChange={(e) => set('priority', e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+              >
+                <option value="low">Low</option>
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                S.No (Sequence)
+              </label>
+              <input
+                type="number"
+                value={form.sequence}
+                onChange={(e) => set('sequence', Number(e.target.value))}
                 className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
@@ -211,34 +268,86 @@ export default function ProjectModal({ isOpen, onClose, project }) {
             )}
           </div>
 
-          {/* Assign Members */}
-          <div>
+          {/* Assign Members - Searchable Dropdown */}
+          <div className="relative" ref={dropdownRef}>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">
               Assign Team Members
             </label>
-            <div className="max-h-36 overflow-y-auto bg-gray-800 border border-gray-700 rounded-xl divide-y divide-gray-700/50">
-              {team.length === 0 ? (
-                <p className="text-xs text-gray-500 text-center py-4">
-                  No team members yet. Ask a MASTER_ADMIN to add some.
-                </p>
-              ) : (
-                team.map((m) => (
-                  <label
-                    key={m._id}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-gray-700/50 cursor-pointer transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.assignedPeople.includes(m._id)}
-                      onChange={() => togglePerson(m._id)}
-                      className="accent-indigo-500 w-3.5 h-3.5 shrink-0"
-                    />
-                    <span className="text-sm text-white">{m.name}</span>
-                    <span className="text-xs text-gray-500 ml-auto">{m.role}</span>
-                  </label>
-                ))
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsTeamDropdownOpen(!isTeamDropdownOpen)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white flex items-center justify-between hover:border-indigo-500/50 transition-colors"
+            >
+              <span className={selectedCount === 0 ? "text-gray-500" : "text-white"}>
+                {selectedCount === 0 ? 'Select members...' : `${selectedCount} member(s) assigned`}
+              </span>
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isTeamDropdownOpen && (
+              <div className="absolute z-[60] left-0 right-0 mt-2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-2 border-b border-gray-800">
+                  <input
+                    type="text"
+                    placeholder="Search personnel..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="w-full bg-black/40 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-indigo-500 transition-colors"
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-52 overflow-y-auto p-1 divide-y divide-gray-800/40">
+                  {filteredTeam.length === 0 ? (
+                    <p className="text-[11px] text-gray-600 text-center py-6 italic">No matches found</p>
+                  ) : (
+                    filteredTeam.map((m) => {
+                      const isSelected = form.assignedPeople.includes(m._id);
+                      return (
+                        <label
+                          key={m._id}
+                          className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-gray-800/80 group ${isSelected ? 'bg-indigo-500/5' : ''}`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-500' : 'border-gray-700 group-hover:border-gray-500'}`}>
+                            {isSelected && <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-400' : 'text-gray-200'}`}>{m.name}</div>
+                            <div className="text-[9px] text-gray-500 uppercase tracking-widest font-black leading-none mt-0.5">{m.role}</div>
+                          </div>
+                          {isSelected && <span className="text-[10px] text-indigo-500 font-black">✓</span>}
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={isSelected}
+                            onChange={() => togglePerson(m._id)}
+                          />
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Selection Summary (Chips) */}
+            {selectedCount > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {team.filter(m => form.assignedPeople.includes(m._id)).map(m => (
+                  <div key={m._id} className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 pl-2 pr-1 py-0.5 rounded-md">
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tight">{m.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => togglePerson(m._id)}
+                      className="w-4 h-4 flex items-center justify-center text-indigo-400 hover:text-white hover:bg-indigo-600 rounded transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Progress */}

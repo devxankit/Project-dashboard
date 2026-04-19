@@ -38,10 +38,27 @@ export default function ProjectRow({ project, onEdit }) {
 
   return (
     <tr className="border-b border-gray-800/80 hover:bg-gray-800/30 transition-colors group">
+      {/* S.No */}
+      <td className="px-4 py-3.5 text-xs text-gray-500 font-mono">
+        {project.sequence || 0}
+      </td>
+
       {/* Name */}
       <td className="px-4 py-3.5">
         <div className="font-medium text-white text-sm leading-tight">{project.name}</div>
         <div className="text-[11px] text-gray-500 mt-0.5">by {project.createdBy?.name}</div>
+      </td>
+
+      {/* Priority */}
+      <td className="px-4 py-3.5">
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+          project.priority === 'urgent' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+          project.priority === 'high' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+          project.priority === 'low' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+          'bg-gray-500/10 text-gray-400 border-gray-500/20'
+        }`}>
+          {project.priority || 'normal'}
+        </span>
       </td>
 
       {/* Start Date */}

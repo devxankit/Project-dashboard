@@ -36,23 +36,23 @@ export default function ActivityLogPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-white">Activity Logs</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            All admin actions tracked in real time
+          <h3 className="text-sm md:text-base font-semibold text-white uppercase tracking-tight">Activity Logs</h3>
+          <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 uppercase tracking-widest font-bold">
+            Real-time track
           </p>
         </div>
         <button
           onClick={fetchLogs}
           disabled={loading.logs}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50"
+          className="flex items-center gap-1.5 text-[10px] text-gray-400 hover:text-white transition-colors px-2 md:px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50"
         >
           <svg
-            className={`w-3.5 h-3.5 ${loading.logs ? 'animate-spin' : ''}`}
+            className={`w-3 h-3 md:w-3.5 md:h-3.5 ${loading.logs ? 'animate-spin' : ''}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
@@ -65,7 +65,7 @@ export default function ActivityLogPanel() {
         ) : logs.length === 0 ? (
           <div className="text-center py-20 text-gray-600">
             <p className="text-3xl mb-2">📋</p>
-            <p className="text-sm">No activity recorded yet</p>
+            <p className="text-sm">No activity recorded</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-800/80">
@@ -76,42 +76,44 @@ export default function ActivityLogPanel() {
               return (
                 <div
                   key={log._id}
-                  className="px-5 py-4 hover:bg-gray-800/30 transition-colors"
+                  className="px-4 md:px-5 py-4 hover:bg-gray-800/30 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     {/* Dot */}
-                    <div className="mt-1.5 shrink-0">
-                      <div className={`w-2 h-2 rounded-full ${meta.dot}`} />
+                    <div className="mt-2 shrink-0">
+                      <div className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
-                        <span className="font-semibold text-white">{log.adminName}</span>
-                        <span className={meta.color}>{meta.label}</span>
-                        <span className="font-medium text-gray-200">"{log.target}"</span>
+                      <div className="flex items-center gap-1.5 flex-wrap text-xs md:text-sm">
+                        <span className="font-semibold text-white uppercase tracking-tight">{log.adminName}</span>
+                        <span className={`${meta.color} font-medium`}>{meta.label}</span>
+                        <span className="font-bold text-gray-400">"{log.target}"</span>
                       </div>
 
                       {/* Changed fields */}
                       {log.changes && Object.keys(log.changes).length > 0 && (
-                        <div className={`mt-2 px-3 py-2 rounded-lg border text-xs space-y-1 ${meta.bg}`}>
+                        <div className={`mt-2 px-3 py-2 rounded-lg border text-[10px] space-y-1 ${meta.bg}`}>
                           {Object.entries(log.changes).map(([key, val]) => (
-                            <div key={key} className="flex items-center gap-2 text-gray-400">
-                              <span className="font-medium text-gray-300">{key}</span>
-                              <span>changed</span>
+                            <div key={key} className="flex items-center gap-2 text-gray-400 overflow-hidden">
+                              <span className="font-bold text-gray-300 uppercase shrink-0">{key}</span>
+                              <span className="opacity-50">modified</span>
                             </div>
                           ))}
                         </div>
                       )}
 
-                      <p className="text-[11px] text-gray-600 mt-1.5">
-                        {new Date(log.createdAt).toLocaleString('en-IN', {
-                          day: '2-digit', month: 'short', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit',
-                        })}
-                        {' · '}
-                        <span className="text-gray-500">{timeAgo(log.createdAt)}</span>
-                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter">
+                          {new Date(log.createdAt).toLocaleString('en-IN', {
+                            day: '2-digit', month: 'short',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </p>
+                        <span className="w-1 h-1 bg-gray-800 rounded-full" />
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{timeAgo(log.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

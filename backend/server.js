@@ -18,6 +18,7 @@ app.use('/api/projects', require('./routes/projects'));
 app.use('/api/statuses', require('./routes/statuses'));
 app.use('/api/team', require('./routes/team'));
 app.use('/api/activity', require('./routes/activity'));
+app.use('/api/stats', require('./routes/stats'));
 
 // Global error handler
 app.use((err, req, res, next) => {

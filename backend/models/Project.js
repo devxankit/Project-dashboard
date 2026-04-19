@@ -9,6 +9,8 @@ const projectSchema = new mongoose.Schema(
     assignedPeople: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TeamMember' }],
     remarks: { type: String, default: '' },
     progress: { type: Number, min: 0, max: 100, default: 0 },
+    priority: { type: String, enum: ['low', 'normal', 'high', 'urgent'], default: 'normal' },
+    sequence: { type: Number, default: 0 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }

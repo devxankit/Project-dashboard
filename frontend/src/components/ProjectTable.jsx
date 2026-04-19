@@ -3,7 +3,7 @@ import ProjectRow from './ProjectRow';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 
-const COLS = ['Project Name', 'Start Date', 'Deadline', 'Status', 'Assigned', 'Remarks', 'Progress', 'Live Timer', 'Actions'];
+const COLS = ['S.No', 'Project Name', 'Priority', 'Start Date', 'Deadline', 'Status', 'Assigned', 'Remarks', 'Progress', 'Live Timer', 'Actions'];
 
 export default function ProjectTable({ onEdit }) {
   const { projects, loading } = useApp();
@@ -31,35 +31,35 @@ export default function ProjectTable({ onEdit }) {
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative">
+        <div className="relative flex-1 min-w-[200px]">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
-            placeholder="Search projects, status, people..."
+            placeholder="Filter projects..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-colors w-64"
+            className="bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-xs md:text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-colors w-full"
           />
         </div>
         {statusOptions.length > 0 && (
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs md:text-sm text-white outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto"
           >
             <option value="">All statuses</option>
             {statusOptions.map((s) => <option key={s}>{s}</option>)}
           </select>
         )}
-        <span className="text-xs text-gray-500 ml-auto">
-          {filtered.length} of {projects.length} projects
+        <span className="text-[10px] uppercase font-bold text-gray-500 ml-auto whitespace-nowrap">
+          {filtered.length} / {projects.length} Entries
         </span>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-800 bg-gray-900/40">
+      <div className="overflow-x-auto rounded-none border border-gray-800 bg-gray-900/40">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-gray-800">

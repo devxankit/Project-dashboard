@@ -1,8 +1,10 @@
 import { Toaster } from 'react-hot-toast';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -18,12 +20,29 @@ function AppContent() {
     );
   }
 
-  if (!user) return <Login />;
-
   return (
-    <AppProvider>
-      <Dashboard />
-    </AppProvider>
+    <Router>
+      <Routes>
+        {/* Public Landing Page */}
+        <Route path="/" element={<Home />} />
+        
+        {/* Login Page */}
+        <Route 
+          path="/login" 
+          element={user ? <Navigate to="/dashboard" /> : <Login />} 
+        />
+        
+        {/* Admin Dashboard */}
+        <Route 
+          path="/dashboard/*" 
+          element={user ? (
+            <AppProvider>
+              <Dashboard />
+            </AppProvider>
+          ) : <Navigate to="/login" />} 
+        />
+      </Routes>
+    </Router>
   );
 }
 
