@@ -40,15 +40,16 @@ const connectDB = async () => {
   }
 };
 
-// For local development
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+const PORT = process.env.PORT || 5000;
+
+// Start server if not running on Vercel
+if (!process.env.VERCEL) {
   connectDB().then(() => {
-    const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   });
+} else {
+  // Ensure DB connects for serverless handlers (Vercel)
+  connectDB();
 }
-
-// Ensure DB connects for serverless handlers
-connectDB();
 
 module.exports = app;
