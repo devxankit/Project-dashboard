@@ -31,14 +31,6 @@ export default function Login() {
       </div>
 
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-xl shadow-indigo-900/40 mb-4">
-            <span className="text-2xl">⚡</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">ProjDash</h1>
-          <p className="text-gray-500 mt-1 text-sm">Project Management Dashboard</p>
-        </div>
 
         {/* Card */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-7 shadow-2xl">
