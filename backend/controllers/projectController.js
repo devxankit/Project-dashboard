@@ -26,6 +26,7 @@ exports.getPublicProjects = async (req, res) => {
       .select('-createdBy'); // Hide creator details but show remarks for detail view
     res.json(projects);
   } catch (err) {
+    console.error('Error fetching public projects:', err);
     res.status(500).json({ message: err.message });
   }
 };
