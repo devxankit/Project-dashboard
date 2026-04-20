@@ -3,13 +3,14 @@ import ProjectRow from './ProjectRow';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 
-const COLS = ['S.No', 'Project Name', 'Priority', 'Start Date', 'Deadline', 'Status', 'Assigned', 'Remarks', 'Progress', 'Live Timer', 'Actions'];
+const COLS = ['S.No', 'Project Name', 'Type', 'Priority', 'Start Date', 'Deadline', 'Status', 'Assigned', 'Remarks', 'Progress', 'Live Timer', 'Actions'];
 
 export default function ProjectTable({ onEdit }) {
   const { projects, loading } = useApp();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
   const canEdit = user?.role === 'MASTER_ADMIN' || user?.role === 'ADMIN';
   const cols = canEdit ? COLS : COLS.filter((c) => c !== 'Actions');
@@ -18,13 +19,19 @@ export default function ProjectTable({ onEdit }) {
     projects.map((p) => p.status?.name).filter(Boolean)
   )];
 
+  const typeOptions = [...new Set(
+    projects.map((p) => p.projectType?.name).filter(Boolean)
+  )];
+
   const filtered = projects.filter((p) => {
     const matchSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.status?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.projectType?.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.assignedPeople?.some((m) => m.name.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = !statusFilter || p.status?.name === statusFilter;
-    return matchSearch && matchStatus;
+    const matchType = !typeFilter || p.projectType?.name === typeFilter;
+    return matchSearch && matchStatus && matchType;
   });
 
   return (
@@ -51,6 +58,16 @@ export default function ProjectTable({ onEdit }) {
           >
             <option value="">All statuses</option>
             {statusOptions.map((s) => <option key={s}>{s}</option>)}
+          </select>
+        )}
+        {typeOptions.length > 0 && (
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs md:text-sm text-white outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto"
+          >
+            <option value="">All types</option>
+            {typeOptions.map((t) => <option key={t}>{t}</option>)}
           </select>
         )}
         <span className="text-[10px] uppercase font-bold text-gray-500 ml-auto whitespace-nowrap">

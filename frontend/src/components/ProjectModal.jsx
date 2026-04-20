@@ -4,17 +4,21 @@ import { useApp } from '../context/AppContext';
 
 const EMPTY = {
   name: '', startDate: '', deadline: '',
-  status: '', assignedPeople: [], remarks: '', progress: 0,
+  status: '', projectType: '', assignedPeople: [], remarks: '', progress: 0,
   priority: 'normal', sequence: 0
 };
 
 export default function ProjectModal({ isOpen, onClose, project }) {
-  const { statuses, team, createProject, updateProject, createStatus } = useApp();
+  const { statuses, projectTypes, team, createProject, updateProject, createStatus, createProjectType } = useApp();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [newStatus, setNewStatus] = useState({ name: '', color: '#6366f1' });
   const [showStatusForm, setShowStatusForm] = useState(false);
   const [addingStatus, setAddingStatus] = useState(false);
+  
+  const [newType, setNewType] = useState({ name: '' });
+  const [showTypeForm, setShowTypeForm] = useState(false);
+  const [addingType, setAddingType] = useState(false);
 
   const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
@@ -32,6 +36,7 @@ export default function ProjectModal({ isOpen, onClose, project }) {
         deadline: project.deadline
           ? new Date(project.deadline).toISOString().split('T')[0] : '',
         status: project.status?._id || '',
+        projectType: project.projectType?._id || '',
         assignedPeople: project.assignedPeople?.map((p) => p._id) || [],
         remarks: project.remarks || '',
         progress: project.progress ?? 0,
@@ -42,6 +47,7 @@ export default function ProjectModal({ isOpen, onClose, project }) {
       setForm(EMPTY);
     }
     setShowStatusForm(false);
+    setShowTypeForm(false);
     setIsTeamDropdownOpen(false);
     setMemberSearch('');
   }, [project, isOpen]);
@@ -84,9 +90,25 @@ export default function ProjectModal({ isOpen, onClose, project }) {
     }
   };
 
+  const handleAddType = async () => {
+    if (!newType.name.trim()) return;
+    setAddingType(true);
+    try {
+      const created = await createProjectType(newType);
+      set('projectType', created._id);
+      setNewType({ name: '' });
+      setShowTypeForm(false);
+      toast.success(`Project type "${created.name}" created`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create project type');
+    } finally {
+      setAddingType(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.startDate || !form.deadline || !form.status) {
+    if (!form.name.trim() || !form.startDate || !form.deadline || !form.status || !form.projectType) {
       toast.error('Please fill all required fields');
       return;
     }
@@ -263,6 +285,55 @@ export default function ProjectModal({ isOpen, onClose, project }) {
                   className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs text-white transition-colors disabled:opacity-50"
                 >
                   {addingStatus ? '...' : 'Add'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Project Type */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
+              Project Type <span className="text-red-400">*</span>
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={form.projectType}
+                onChange={(e) => set('projectType', e.target.value)}
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+              >
+                <option value="">Select type...</option>
+                {projectTypes.map((t) => (
+                  <option key={t._id} value={t._id}>{t.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowTypeForm(!showTypeForm)}
+                className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-xs text-gray-400 hover:text-white hover:border-indigo-500 transition-colors whitespace-nowrap"
+              >
+                + New
+              </button>
+            </div>
+
+            {/* Inline new type form */}
+            {showTypeForm && (
+              <div className="mt-2 flex gap-2 items-center bg-gray-800/60 border border-gray-700 rounded-xl px-3 py-2">
+                <input
+                  type="text"
+                  placeholder="Type name"
+                  value={newType.name}
+                  onChange={(e) => setNewType((t) => ({ ...t, name: e.target.value }))}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddType())}
+                  className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddType}
+                  disabled={addingType}
+                  className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs text-white transition-colors disabled:opacity-50"
+                >
+                  {addingType ? '...' : 'Add'}
                 </button>
               </div>
             )}

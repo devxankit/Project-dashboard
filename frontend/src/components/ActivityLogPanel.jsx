@@ -1,13 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 const ACTION_META = {
   CREATE_PROJECT:  { label: 'created project',   color: 'text-green-400',  bg: 'bg-green-950/40 border-green-900/50',  dot: 'bg-green-500' },
   UPDATE_PROJECT:  { label: 'updated project',   color: 'text-blue-400',   bg: 'bg-blue-950/40 border-blue-900/50',    dot: 'bg-blue-500' },
   DELETE_PROJECT:  { label: 'deleted project',   color: 'text-red-400',    bg: 'bg-red-950/40 border-red-900/50',      dot: 'bg-red-500' },
+  PROJECT_STATUS_CHANGE: { label: 'changed status', color: 'text-indigo-400', bg: 'bg-indigo-950/40 border-indigo-900/50', dot: 'bg-indigo-500' },
   CREATE_STATUS:   { label: 'created status',    color: 'text-purple-400', bg: 'bg-purple-950/40 border-purple-900/50', dot: 'bg-purple-500' },
   UPDATE_STATUS:   { label: 'updated status',    color: 'text-blue-400',   bg: 'bg-blue-950/40 border-blue-900/50',    dot: 'bg-blue-500' },
   DELETE_STATUS:   { label: 'deleted status',    color: 'text-red-400',    bg: 'bg-red-950/40 border-red-900/50',      dot: 'bg-red-500' },
+  CREATE_PROJECT_TYPE: { label: 'created type', color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-900/50', dot: 'bg-emerald-500' },
+  UPDATE_PROJECT_TYPE: { label: 'updated type', color: 'text-blue-400', bg: 'bg-blue-950/40 border-blue-900/50', dot: 'bg-blue-500' },
+  DELETE_PROJECT_TYPE: { label: 'deleted type', color: 'text-red-400', bg: 'bg-red-950/40 border-red-900/50', dot: 'bg-red-500' },
   ADD_MEMBER:      { label: 'added member',      color: 'text-green-400',  bg: 'bg-green-950/40 border-green-900/50',  dot: 'bg-green-500' },
   UPDATE_MEMBER:   { label: 'updated member',    color: 'text-blue-400',   bg: 'bg-blue-950/40 border-blue-900/50',    dot: 'bg-blue-500' },
   DELETE_MEMBER:   { label: 'removed member',    color: 'text-red-400',    bg: 'bg-red-950/40 border-red-900/50',      dot: 'bg-red-500' },
@@ -28,8 +32,25 @@ function timeAgo(date) {
 
 export default function ActivityLogPanel() {
   const { logs, loading, fetchLogs } = useApp();
+  const [search, setSearch] = useState('');
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  const filteredLogs = logs.filter(log => {
+    if (!log) return false;
+    const s = search.toLowerCase();
+    const adminName = (log.adminName || '').toLowerCase();
+    const target = (log.target || '').toLowerCase();
+    const action = (log.action || '').toLowerCase();
+    const actionLabel = (ACTION_META[log.action]?.label || '').toLowerCase();
+
+    return (
+      adminName.includes(s) ||
+      target.includes(s) ||
+      action.includes(s) ||
+      actionLabel.includes(s)
+    );
+  });
 
   return (
     <div className="flex flex-col gap-4 max-w-3xl">
@@ -56,6 +77,28 @@ export default function ActivityLogPanel() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search activity by name, project, or action..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 pl-10 text-xs md:text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+        />
+        <svg className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        {search && (
+          <button 
+            onClick={() => setSearch('')}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-xs"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       {/* Log List */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
         {loading.logs && logs.length === 0 ? (
@@ -69,7 +112,7 @@ export default function ActivityLogPanel() {
           </div>
         ) : (
           <div className="divide-y divide-gray-800/80">
-            {logs.map((log) => {
+            {filteredLogs.map((log) => {
               const meta = ACTION_META[log.action] ?? {
                 label: log.action, color: 'text-gray-400', bg: 'bg-gray-800 border-gray-700', dot: 'bg-gray-500',
               };
@@ -94,11 +137,15 @@ export default function ActivityLogPanel() {
 
                       {/* Changed fields */}
                       {log.changes && Object.keys(log.changes).length > 0 && (
-                        <div className={`mt-2 px-3 py-2 rounded-lg border text-[10px] space-y-1 ${meta.bg}`}>
+                        <div className={`mt-2 px-3 py-2 rounded-lg border text-[10px] space-y-1.5 ${meta.bg}`}>
                           {Object.entries(log.changes).map(([key, val]) => (
-                            <div key={key} className="flex items-center gap-2 text-gray-400 overflow-hidden">
-                              <span className="font-bold text-gray-300 uppercase shrink-0">{key}</span>
-                              <span className="opacity-50">modified</span>
+                            <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-gray-400">
+                              <span className="font-bold text-gray-300 uppercase shrink-0 min-w-[70px]">{key}:</span>
+                              <div className="flex items-center gap-1.5 overflow-hidden">
+                                <span className="opacity-60 truncate max-w-[120px] line-through decoration-red-500/50">{String(val?.from ?? 'None')}</span>
+                                <span className="text-indigo-500 font-bold shrink-0">→</span>
+                                <span className="text-white font-semibold truncate max-w-[150px]">{String(val?.to ?? 'None')}</span>
+                              </div>
                             </div>
                           ))}
                         </div>

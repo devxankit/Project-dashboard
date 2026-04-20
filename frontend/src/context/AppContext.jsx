@@ -7,10 +7,11 @@ const AppContext = createContext(null);
 export function AppProvider({ children }) {
   const [projects, setProjects] = useState([]);
   const [statuses, setStatuses] = useState([]);
+  const [projectTypes, setProjectTypes] = useState([]);
   const [team, setTeam] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState({
-    projects: false, statuses: false, team: false, logs: false,
+    projects: false, statuses: false, projectTypes: false, team: false, logs: false,
   });
 
   const setLoad = (key, val) =>
@@ -38,6 +39,18 @@ export function AppProvider({ children }) {
       toast.error('Failed to load statuses');
     } finally {
       setLoad('statuses', false);
+    }
+  }, []);
+
+  const fetchProjectTypes = useCallback(async () => {
+    setLoad('projectTypes', true);
+    try {
+      const res = await api.get('/project-types');
+      setProjectTypes(res.data);
+    } catch {
+      toast.error('Failed to load project types');
+    } finally {
+      setLoad('projectTypes', false);
     }
   }, []);
 
@@ -104,6 +117,13 @@ export function AppProvider({ children }) {
     setStatuses((prev) => prev.filter((s) => s._id !== id));
   };
 
+  // ─── Project Types ────────────────────────────────────────────────────────
+  const createProjectType = async (data) => {
+    const res = await api.post('/project-types', data);
+    setProjectTypes((prev) => [...prev, res.data]);
+    return res.data;
+  };
+
   // ─── Team ─────────────────────────────────────────────────────────────────
   const addMember = async (data) => {
     const res = await api.post('/team', data);
@@ -127,10 +147,11 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      projects, statuses, team, logs, loading,
-      fetchProjects, fetchStatuses, fetchTeam, fetchLogs,
+      projects, statuses, projectTypes, team, logs, loading,
+      fetchProjects, fetchStatuses, fetchProjectTypes, fetchTeam, fetchLogs,
       createProject, updateProject, deleteProject,
       createStatus, updateStatus, deleteStatus,
+      createProjectType,
       addMember, updateMember, deleteMember,
     }}>
       {children}

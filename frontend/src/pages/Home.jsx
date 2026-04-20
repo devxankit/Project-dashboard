@@ -8,7 +8,7 @@ import { formatDate } from '../utils/helpers';
 
 function ProjectViewModal({ project, onClose }) {
   if (!project) return null;
-  const elapsed = useLiveTimer(project.startDate);
+  const elapsed = useLiveTimer(project.startDate, project.completedAt);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4">
@@ -37,6 +37,9 @@ function ProjectViewModal({ project, onClose }) {
               'bg-gray-500/10 text-gray-400 border-gray-500/20'
             }`}>
               {project.priority || 'normal'}
+            </span>
+            <span className="text-[9px] md:text-[10px] px-2.5 py-1 rounded-none font-black uppercase tracking-widest border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+              {project.projectType?.name || 'Standard'}
             </span>
           </div>
           <h2 className="text-xl md:text-3xl font-black text-white leading-tight uppercase truncate pr-10">{project.name}</h2>
@@ -84,6 +87,15 @@ function ProjectViewModal({ project, onClose }) {
                   </div>
                 </div>
               </div>
+              
+              {project.completedAt && (
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2 text-indigo-400">Completion Date</label>
+                  <div className="bg-indigo-500/5 border border-indigo-500/20 px-3 py-2 text-xs font-bold text-white uppercase tracking-wider">
+                    Finished on {formatDate(project.completedAt)}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -143,13 +155,18 @@ function ProjectViewModal({ project, onClose }) {
 }
 
 function PublicRow({ project, onView }) {
-  const elapsed = useLiveTimer(project.startDate);
+  const elapsed = useLiveTimer(project.startDate, project.completedAt);
   
   return (
     <tr className="border-b border-gray-800/80 hover:bg-gray-800/10 transition-colors group">
       <td className="px-4 py-2.5 text-xs text-gray-500 font-mono">{project.sequence || 0}</td>
       <td className="px-4 py-2.5">
         <div className="font-bold text-white text-[14px] leading-tight group-hover:text-indigo-400 transition-colors uppercase">{project.name}</div>
+      </td>
+      <td className="px-4 py-2.5">
+        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-2 py-1 bg-indigo-500/5 border border-indigo-500/10">
+          {project.projectType?.name || 'Standard'}
+        </span>
       </td>
       <td className="px-4 py-2.5">
         <span className={`text-[9px] px-2 py-0.5 rounded-none font-black uppercase tracking-widest border ${
@@ -214,6 +231,7 @@ export default function Home() {
   // Filter State
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [assignedFilter, setAssignedFilter] = useState('');
 
@@ -229,6 +247,10 @@ export default function Home() {
     ...new Set(projects.map(p => p.status?.name).filter(Boolean))
   ].sort(), [projects]);
 
+  const uniqueTypes = useMemo(() => [
+    ...new Set(projects.map(p => p.projectType?.name).filter(Boolean))
+  ].sort(), [projects]);
+
   const uniquePeople = useMemo(() => [
     ...new Set(projects.flatMap(p => p.assignedPeople?.map(ap => ap.name)).filter(Boolean))
   ].sort(), [projects]);
@@ -242,21 +264,23 @@ export default function Home() {
         p.assignedPeople?.some(ap => ap.name?.toLowerCase().includes(search.toLowerCase()));
       
       const matchStatus = !statusFilter || p.status?.name === statusFilter;
+      const matchType = !typeFilter || p.projectType?.name === typeFilter;
       const matchPriority = !priorityFilter || p.priority === priorityFilter;
       const matchAssigned = !assignedFilter || p.assignedPeople?.some(ap => ap.name === assignedFilter);
 
-      return matchSearch && matchStatus && matchPriority && matchAssigned;
+      return matchSearch && matchStatus && matchType && matchPriority && matchAssigned;
     });
-  }, [projects, search, statusFilter, priorityFilter, assignedFilter]);
+  }, [projects, search, statusFilter, typeFilter, priorityFilter, assignedFilter]);
 
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('');
+    setTypeFilter('');
     setPriorityFilter('');
     setAssignedFilter('');
   };
 
-  const isFiltered = search || statusFilter || priorityFilter || assignedFilter;
+  const isFiltered = search || statusFilter || typeFilter || priorityFilter || assignedFilter;
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col scroll-smooth">
@@ -292,6 +316,16 @@ export default function Home() {
             >
               <option value="">Status: All</option>
               {uniqueStatuses.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+            </select>
+
+            {/* Type Filter */}
+            <select 
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="w-full lg:w-auto bg-gray-800 border border-gray-700 rounded-none px-3 md:px-4 py-2.5 text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest outline-none focus:border-indigo-600 transition-colors cursor-pointer"
+            >
+              <option value="">Type: All</option>
+              {uniqueTypes.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
             </select>
 
             {/* Priority Filter */}
@@ -337,7 +371,7 @@ export default function Home() {
             <table className="w-full text-left table-auto">
               <thead>
                 <tr className="bg-gray-800/80 border-b border-gray-700">
-                  {['#', 'Project', 'Priority', 'Start', 'Deadline', 'Assigned', 'Progress', 'Status', 'Timer', ''].map((col, idx) => (
+                  {['#', 'Project', 'Type', 'Priority', 'Start', 'Deadline', 'Assigned', 'Progress', 'Status', 'Timer', ''].map((col, idx) => (
                     <th key={idx} className="px-4 py-4 text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">
                       {col}
                     </th>

@@ -7,8 +7,9 @@ const activityLogSchema = new mongoose.Schema(
     action: {
       type: String,
       enum: [
-        'CREATE_PROJECT', 'UPDATE_PROJECT', 'DELETE_PROJECT',
+        'CREATE_PROJECT', 'UPDATE_PROJECT', 'DELETE_PROJECT', 'PROJECT_STATUS_CHANGE',
         'CREATE_STATUS', 'UPDATE_STATUS', 'DELETE_STATUS',
+        'CREATE_PROJECT_TYPE', 'UPDATE_PROJECT_TYPE', 'DELETE_PROJECT_TYPE',
         'ADD_MEMBER', 'UPDATE_MEMBER', 'DELETE_MEMBER',
         'PROMOTE_USER', 'DEMOTE_USER',
       ],

@@ -15,13 +15,14 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { fetchProjects, fetchStatuses, fetchTeam } = useApp();
+  const { fetchProjects, fetchStatuses, fetchProjectTypes, fetchTeam } = useApp();
 
   useEffect(() => {
     fetchProjects();
     fetchStatuses();
+    fetchProjectTypes();
     fetchTeam();
-  }, [fetchProjects, fetchStatuses, fetchTeam]);
+  }, [fetchProjects, fetchStatuses, fetchProjectTypes, fetchTeam]);
 
   const openAdd = () => {
     setEditingProject(null);

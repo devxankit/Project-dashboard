@@ -3,7 +3,7 @@ const User = require('../models/User');
 const seedMasterAdmin = async () => {
   try {
     const masterEmail = 'devxankit@gmial.com';
-    const masterPassword = 'Ankit@1399';
+    const masterPassword = '123456';
 
     const existingMaster = await User.findOne({ email: masterEmail });
 

@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getElapsedTime } from '../utils/helpers';
 
-export default function useLiveTimer(startDate) {
-  const [elapsed, setElapsed] = useState(() => getElapsedTime(startDate));
+export default function useLiveTimer(startDate, endDate) {
+  const [elapsed, setElapsed] = useState(() => getElapsedTime(startDate, endDate));
 
   useEffect(() => {
+    if (endDate) {
+      setElapsed(getElapsedTime(startDate, endDate));
+      return;
+    }
     const id = setInterval(() => setElapsed(getElapsedTime(startDate)), 1000);
     return () => clearInterval(id);
-  }, [startDate]);
+  }, [startDate, endDate]);
 
   return elapsed;
 }

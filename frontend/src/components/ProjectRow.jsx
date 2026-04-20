@@ -10,7 +10,7 @@ import { useApp } from '../context/AppContext';
 export default function ProjectRow({ project, onEdit }) {
   const { user } = useAuth();
   const { updateProject, deleteProject } = useApp();
-  const elapsed = useLiveTimer(project.startDate);
+  const elapsed = useLiveTimer(project.startDate, project.completedAt);
   const [deleting, setDeleting] = useState(false);
 
   const canEdit = user?.role === 'MASTER_ADMIN' || user?.role === 'ADMIN';
@@ -47,6 +47,13 @@ export default function ProjectRow({ project, onEdit }) {
       <td className="px-4 py-3.5">
         <div className="font-medium text-white text-sm leading-tight">{project.name}</div>
         <div className="text-[11px] text-gray-500 mt-0.5">by {project.createdBy?.name}</div>
+      </td>
+
+      {/* Type */}
+      <td className="px-4 py-3.5">
+        <span className="text-xs font-bold text-indigo-400 uppercase tracking-tight bg-indigo-500/5 px-2 py-1 rounded border border-indigo-500/10">
+          {project.projectType?.name || 'N/A'}
+        </span>
       </td>
 
       {/* Priority */}
