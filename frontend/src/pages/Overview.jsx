@@ -33,10 +33,34 @@ export default function Overview() {
   if (!stats) return null;
 
   const summaryCards = [
-    { label: 'Total Projects', value: stats.summary.totalProjects, color: 'indigo', icon: '📊' },
-    { label: 'Urgent Priority', value: stats.summary.urgentCount, color: 'red', icon: '🔥' },
-    { label: 'Created (7d)', value: stats.summary.recentCount, color: 'green', icon: '✨' },
-    { label: 'Avg Progress', value: '64%', color: 'purple', icon: '📈' }, 
+    { 
+      label: 'Total Projects', 
+      value: stats.summary.totalProjects, 
+      color: 'indigo', 
+      icon: '📊',
+      progress: Math.min((stats.summary.totalProjects / 50) * 100, 100)
+    },
+    { 
+      label: 'Urgent Priority', 
+      value: stats.summary.urgentCount, 
+      color: 'red', 
+      icon: '🔥',
+      progress: stats.summary.totalProjects > 0 ? (stats.summary.urgentCount / stats.summary.totalProjects) * 100 : 0
+    },
+    { 
+      label: 'Created (7d)', 
+      value: stats.summary.recentCount, 
+      color: 'green', 
+      icon: '✨',
+      progress: stats.summary.totalProjects > 0 ? (stats.summary.recentCount / stats.summary.totalProjects) * 100 : 0
+    },
+    { 
+      label: 'Avg Progress', 
+      value: `${stats.summary.avgProgress || 0}%`, 
+      color: 'purple', 
+      icon: '📈',
+      progress: stats.summary.avgProgress || 0 
+    }, 
   ];
 
   const PRIORITY_COLORS = {
@@ -184,7 +208,10 @@ export default function Overview() {
               <span className="text-xl md:text-2xl grayscale group-hover:grayscale-0 transition-all duration-300">{card.icon}</span>
             </div>
             <div className="mt-4 h-1.5 w-full bg-gray-800 rounded-full overflow-hidden relative z-10">
-               <div className={`h-full bg-${card.color}-500 w-2/3 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]`} />
+               <div 
+                 className={`h-full bg-${card.color}-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-1000`} 
+                 style={{ width: `${card.progress}%` }}
+               />
             </div>
           </div>
         ))}
