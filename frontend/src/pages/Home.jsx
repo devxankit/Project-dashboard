@@ -352,15 +352,35 @@ export default function Home() {
             </select>
           </div>
 
-          {/* Clear Button */}
-          {isFiltered && (
-            <button 
-              onClick={clearFilters}
-              className="text-[10px] font-black text-red-500/80 hover:text-red-400 uppercase tracking-widest sm:ml-auto lg:ml-0 transition-colors whitespace-nowrap pt-2 lg:pt-0"
-            >
-              Clear Filters
-            </button>
-          )}
+          {/* Results Summary */}
+          <div className="flex items-center gap-3 lg:ml-auto pt-2 lg:pt-0">
+            <div className={`px-3 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-500 ${
+              isFiltered 
+                ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_20px_rgba(79,70,229,0.1)] animate-in fade-in slide-in-from-right-4' 
+                : 'bg-gray-800/30 text-gray-500 border-gray-800/50'
+            }`}>
+              {isFiltered ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse" />
+                  {statusFilter || typeFilter || priorityFilter || assignedFilter || 'SEARCH'} - {filteredProjects.length} PROJECTS FOUND
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="w-1 h-1 bg-gray-600 rounded-full" />
+                  TOTAL - {projects.length} PROJECTS
+                </span>
+              )}
+            </div>
+
+            {isFiltered && (
+              <button 
+                onClick={clearFilters}
+                className="text-[10px] font-black text-red-500/80 hover:text-red-400 uppercase tracking-widest transition-colors whitespace-nowrap hover:scale-105 active:scale-95"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
