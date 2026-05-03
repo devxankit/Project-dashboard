@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 
@@ -27,9 +28,15 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         
         {/* Login Page */}
-        <Route 
-          path="/login" 
-          element={user ? <Navigate to="/dashboard" /> : <Login />} 
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/dashboard" /> : <Login />}
+        />
+
+        {/* Register Page */}
+        <Route
+          path="/register"
+          element={user ? <Navigate to="/dashboard" /> : <Register />}
         />
         
         {/* Admin Dashboard */}

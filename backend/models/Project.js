@@ -14,6 +14,7 @@ const projectSchema = new mongoose.Schema(
     priority: { type: String, enum: ['low', 'normal', 'high', 'urgent'], default: 'normal' },
     sequence: { type: Number, default: 0 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );

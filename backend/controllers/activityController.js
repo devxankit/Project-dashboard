@@ -6,9 +6,11 @@ exports.getLogs = async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const skip = (page - 1) * limit;
 
+    const filter = { tenantId: req.user.tenantId };
+
     const [logs, total] = await Promise.all([
-      ActivityLog.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      ActivityLog.countDocuments(),
+      ActivityLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      ActivityLog.countDocuments(filter),
     ]);
 
     res.json({ logs, total, page, limit });
