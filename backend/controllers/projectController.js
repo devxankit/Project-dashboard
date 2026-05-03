@@ -12,7 +12,9 @@ const populate = (query) =>
 
 exports.getProjects = async (req, res) => {
   try {
-    const projects = await populate(Project.find().sort({ sequence: 1, createdAt: -1 }));
+    const projects = await populate(
+      Project.find({ tenantId: req.user.tenantId }).sort({ sequence: 1, createdAt: -1 })
+    );
     res.json(projects);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -21,13 +23,13 @@ exports.getProjects = async (req, res) => {
 
 exports.getPublicProjects = async (req, res) => {
   try {
-    // Only fetch fields that are safe for public viewing
-    const projects = await Project.find()
+    const filter = req.query.tenantId ? { tenantId: req.query.tenantId } : {};
+    const projects = await Project.find(filter)
       .sort({ sequence: 1, createdAt: -1 })
       .populate('status', 'name color')
       .populate('projectType', 'name')
-      .populate('assignedPeople', 'name role') // No emails for public
-      .select('-createdBy'); // Hide creator details but show remarks for detail view
+      .populate('assignedPeople', 'name role')
+      .select('-createdBy');
     res.json(projects);
   } catch (err) {
     console.error('Error fetching public projects:', err);
@@ -41,7 +43,6 @@ exports.createProject = async (req, res) => {
     if (!name || !startDate || !deadline || !status || !projectType)
       return res.status(400).json({ message: 'name, startDate, deadline, status and projectType are required' });
 
-    // Check if status is "completed"
     let completedAt = null;
     const statusDoc = await Status.findById(status);
     if (statusDoc && statusDoc.name.toLowerCase() === 'completed') {
@@ -56,12 +57,14 @@ exports.createProject = async (req, res) => {
       priority: priority || 'normal',
       sequence: sequence || 0,
       createdBy: req.user._id,
+      tenantId: req.user.tenantId,
       completedAt,
     });
 
     const populated = await populate(Project.findById(project._id));
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'CREATE_PROJECT',
@@ -76,7 +79,7 @@ exports.createProject = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
   try {
-    const old = await Project.findById(req.params.id);
+    const old = await Project.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!old) return res.status(404).json({ message: 'Project not found' });
 
     const tracked = ['name', 'startDate', 'deadline', 'status', 'projectType', 'progress', 'remarks', 'priority', 'sequence'];
@@ -87,11 +90,9 @@ exports.updateProject = async (req, res) => {
         const oldVal = old[key];
         const newVal = req.body[key];
 
-        // Safety check for null/undefined
         if (oldVal == null || newVal == null) {
           isChanged = String(oldVal) !== String(newVal);
         } else if (['startDate', 'deadline'].includes(key)) {
-          // Special handling for Date comparison
           const oldTime = new Date(oldVal).getTime();
           const newTime = new Date(newVal).getTime();
           isChanged = !isNaN(oldTime) && !isNaN(newTime) ? oldTime !== newTime : String(oldVal) !== String(newVal);
@@ -105,7 +106,6 @@ exports.updateProject = async (req, res) => {
       }
     });
 
-    // Handle completedAt logic
     if (req.body.status) {
       const statusDoc = await Status.findById(req.body.status);
       if (statusDoc && statusDoc.name.toLowerCase() === 'completed') {
@@ -117,32 +117,35 @@ exports.updateProject = async (req, res) => {
       }
     }
 
+    // Prevent overwriting tenantId via request body
+    const { tenantId: _t, ...updateData } = req.body;
+
     const project = await populate(
-      Project.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+      Project.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true })
     );
 
-    // Resolve names for activity log - wrapped in try/catch for safety
     try {
       if (changes.status) {
         const fromStatus = changes.status.from ? await Status.findById(changes.status.from) : null;
         const toStatus = changes.status.to ? await Status.findById(changes.status.to) : null;
-        changes.status = { 
-          from: fromStatus?.name || (changes.status.from ? 'Unknown Status' : 'None'), 
-          to: toStatus?.name || 'Unknown Status' 
+        changes.status = {
+          from: fromStatus?.name || (changes.status.from ? 'Unknown Status' : 'None'),
+          to: toStatus?.name || 'Unknown Status'
         };
       }
       if (changes.projectType) {
         const fromType = changes.projectType.from ? await ProjectType.findById(changes.projectType.from) : null;
         const toType = changes.projectType.to ? await ProjectType.findById(changes.projectType.to) : null;
-        changes.projectType = { 
-          from: fromType?.name || (changes.projectType.from ? 'Unknown Type' : 'None'), 
-          to: toType?.name || 'Unknown Type' 
+        changes.projectType = {
+          from: fromType?.name || (changes.projectType.from ? 'Unknown Type' : 'None'),
+          to: toType?.name || 'Unknown Type'
         };
       }
 
       const isOnlyStatus = Object.keys(changes).length === 1 && changes.status;
 
       await logActivity({
+        tenantId: req.user.tenantId,
         adminId: req.user?._id,
         adminName: req.user?.name || 'Admin',
         action: isOnlyStatus ? 'PROJECT_STATUS_CHANGE' : 'UPDATE_PROJECT',
@@ -151,7 +154,6 @@ exports.updateProject = async (req, res) => {
       });
     } catch (logErr) {
       console.error('Logging resolution error:', logErr.message);
-      // Main request continues even if logging resolution fails
     }
 
     res.json(project);
@@ -162,10 +164,11 @@ exports.updateProject = async (req, res) => {
 
 exports.deleteProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndDelete(req.params.id);
+    const project = await Project.findOneAndDelete({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!project) return res.status(404).json({ message: 'Project not found' });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'DELETE_PROJECT',

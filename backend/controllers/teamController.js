@@ -3,7 +3,7 @@ const { logActivity } = require('../services/activityService');
 
 exports.getTeam = async (req, res) => {
   try {
-    const members = await TeamMember.find().sort({ createdAt: -1 });
+    const members = await TeamMember.find({ tenantId: req.user.tenantId }).sort({ createdAt: -1 });
     res.json(members);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -15,9 +15,14 @@ exports.addMember = async (req, res) => {
     const { name, email, role } = req.body;
     if (!name || !email) return res.status(400).json({ message: 'Name and email are required' });
 
-    const member = await TeamMember.create({ name, email, role, addedBy: req.user._id });
+    const member = await TeamMember.create({
+      name, email, role,
+      addedBy: req.user._id,
+      tenantId: req.user.tenantId,
+    });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'ADD_MEMBER',
@@ -34,10 +39,16 @@ exports.addMember = async (req, res) => {
 
 exports.updateMember = async (req, res) => {
   try {
-    const member = await TeamMember.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { tenantId: _t, ...updateData } = req.body;
+    const member = await TeamMember.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.user.tenantId },
+      updateData,
+      { new: true }
+    );
     if (!member) return res.status(404).json({ message: 'Member not found' });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'UPDATE_MEMBER',
@@ -52,10 +63,11 @@ exports.updateMember = async (req, res) => {
 
 exports.deleteMember = async (req, res) => {
   try {
-    const member = await TeamMember.findByIdAndDelete(req.params.id);
+    const member = await TeamMember.findOneAndDelete({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!member) return res.status(404).json({ message: 'Member not found' });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'DELETE_MEMBER',

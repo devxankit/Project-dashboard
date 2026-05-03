@@ -3,7 +3,7 @@ const { logActivity } = require('../services/activityService');
 
 exports.getProjectTypes = async (req, res) => {
   try {
-    const types = await ProjectType.find().sort({ createdAt: 1 });
+    const types = await ProjectType.find({ tenantId: req.user.tenantId }).sort({ createdAt: 1 });
     res.json(types);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -15,9 +15,10 @@ exports.createProjectType = async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
 
-    const projectType = await ProjectType.create({ name, createdBy: req.user._id });
+    const projectType = await ProjectType.create({ name, createdBy: req.user._id, tenantId: req.user.tenantId });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'CREATE_PROJECT_TYPE',
@@ -34,10 +35,16 @@ exports.createProjectType = async (req, res) => {
 
 exports.updateProjectType = async (req, res) => {
   try {
-    const projectType = await ProjectType.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { tenantId: _t, ...updateData } = req.body;
+    const projectType = await ProjectType.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.user.tenantId },
+      updateData,
+      { new: true }
+    );
     if (!projectType) return res.status(404).json({ message: 'Project type not found' });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'UPDATE_PROJECT_TYPE',
@@ -52,10 +59,11 @@ exports.updateProjectType = async (req, res) => {
 
 exports.deleteProjectType = async (req, res) => {
   try {
-    const projectType = await ProjectType.findByIdAndDelete(req.params.id);
+    const projectType = await ProjectType.findOneAndDelete({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!projectType) return res.status(404).json({ message: 'Project type not found' });
 
     await logActivity({
+      tenantId: req.user.tenantId,
       adminId: req.user._id,
       adminName: req.user.name,
       action: 'DELETE_PROJECT_TYPE',
