@@ -4,6 +4,8 @@ const { protect } = require('../middleware/auth');
 const { requireMasterAdmin } = require('../middleware/roleCheck');
 
 // Public
+router.get('/tenants', ctrl.getPublicTenants);
+router.post('/register', ctrl.registerMasterAdmin);
 router.post('/login', ctrl.login);
 
 // Protected (All Admins)

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const activityLogSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     adminName: { type: String, required: true },
     action: {
@@ -12,6 +13,8 @@ const activityLogSchema = new mongoose.Schema(
         'CREATE_PROJECT_TYPE', 'UPDATE_PROJECT_TYPE', 'DELETE_PROJECT_TYPE',
         'ADD_MEMBER', 'UPDATE_MEMBER', 'DELETE_MEMBER',
         'PROMOTE_USER', 'DEMOTE_USER',
+        'CREATE_ADMIN', 'UPDATE_ADMIN_ACCESS', 'DELETE_ADMIN',
+        'REGISTER_MASTER_ADMIN',
       ],
       required: true,
     },
